@@ -1,0 +1,134 @@
+[
+  {
+    "model": "notifications.notificationtemplate", "pk": 1,
+    "fields": {
+      "name": "email_order_ready",
+      "event_type": "order_ready",
+      "channel": "email",
+      "subject_template": "Ваш автомобиль готов к выдаче — Заказ №{order_number}",
+      "body_template": "Здравствуйте, {client_name}!\n\nРады сообщить, что работы по вашему автомобилю {vehicle_info} завершены.\n\nЗаказ №{order_number}\nИтого: {total_cost} руб.\n\nПроверить статус: {qr_url}\n\nЖдём вас! Телефон: {workshop_phone}\nС уважением, АвтоСервис Про",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 2,
+    "fields": {
+      "name": "telegram_order_ready",
+      "event_type": "order_ready",
+      "channel": "telegram",
+      "subject_template": "",
+      "body_template": "✅ Ваш автомобиль готов!\n\n🚗 {vehicle_info}\n📋 Заказ: №{order_number}\n💰 Итого: {total_cost} ₽\n\n🔗 Статус: {qr_url}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 3,
+    "fields": {
+      "name": "sms_order_ready",
+      "event_type": "order_ready",
+      "channel": "sms",
+      "subject_template": "",
+      "body_template": "АвтоСервис: {vehicle_info} готов к выдаче. Заказ {order_number}, сумма {total_cost} р. Статус: {qr_url}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 4,
+    "fields": {
+      "name": "email_order_created",
+      "event_type": "order_created",
+      "channel": "email",
+      "subject_template": "Заказ №{order_number} принят — АвтоСервис Про",
+      "body_template": "Здравствуйте, {client_name}!\n\nВаш автомобиль {vehicle_info} принят в работу.\n\nЗаказ №{order_number}\nСтатус: {status}\n\nОтслеживайте статус: {qr_url}\n\nТелефон: {workshop_phone}\nС уважением, АвтоСервис Про",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 5,
+    "fields": {
+      "name": "telegram_order_created",
+      "event_type": "order_created",
+      "channel": "telegram",
+      "subject_template": "",
+      "body_template": "📋 Новый заказ принят!\n\n🚗 {vehicle_info}\n📋 Заказ: №{order_number}\n📊 Статус: {status}\n\n🔗 Отслеживать: {qr_url}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 6,
+    "fields": {
+      "name": "sms_order_created",
+      "event_type": "order_created",
+      "channel": "sms",
+      "subject_template": "",
+      "body_template": "АвтоСервис: заказ {order_number} на {vehicle_info} принят. Статус: {qr_url}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 7,
+    "fields": {
+      "name": "email_status_changed",
+      "event_type": "status_changed",
+      "channel": "email",
+      "subject_template": "Статус заказа №{order_number} изменён",
+      "body_template": "Здравствуйте, {client_name}!\n\nСтатус вашего заказа №{order_number} изменён на: {status}\n\nАвтомобиль: {vehicle_info}\n\nПроверить статус: {qr_url}\n\nТелефон: {workshop_phone}\nС уважением, АвтоСервис Про",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 8,
+    "fields": {
+      "name": "telegram_status_changed",
+      "event_type": "status_changed",
+      "channel": "telegram",
+      "subject_template": "",
+      "body_template": "🔄 Статус заказа обновлён\n\n🚗 {vehicle_info}\n📋 Заказ: №{order_number}\n📊 Новый статус: {status}\n\n🔗 Подробнее: {qr_url}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 9,
+    "fields": {
+      "name": "sms_status_changed",
+      "event_type": "status_changed",
+      "channel": "sms",
+      "subject_template": "",
+      "body_template": "АвтоСервис: заказ {order_number} — статус: {status}. Подробнее: {qr_url}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 10,
+    "fields": {
+      "name": "email_maintenance_reminder",
+      "event_type": "maintenance_reminder",
+      "channel": "email",
+      "subject_template": "Напоминание о плановом ТО — АвтоСервис Про",
+      "body_template": "Здравствуйте, {client_name}!\n\nНапоминаем, что вашему автомобилю {vehicle_info} пора пройти плановое техническое обслуживание.\n\nЗапишитесь онлайн или позвоните: {workshop_phone}\n\nС уважением, АвтоСервис Про",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 11,
+    "fields": {
+      "name": "telegram_maintenance_reminder",
+      "event_type": "maintenance_reminder",
+      "channel": "telegram",
+      "subject_template": "",
+      "body_template": "🔧 Напоминание о ТО\n\n🚗 {vehicle_info}\n\nВашему автомобилю пора на плановое ТО!\n📞 Запись: {workshop_phone}",
+      "is_active": true
+    }
+  },
+  {
+    "model": "notifications.notificationtemplate", "pk": 12,
+    "fields": {
+      "name": "sms_maintenance_reminder",
+      "event_type": "maintenance_reminder",
+      "channel": "sms",
+      "subject_template": "",
+      "body_template": "АвтоСервис: {vehicle_info} — пора на плановое ТО. Запись: {workshop_phone}",
+      "is_active": true
+    }
+  }
+]

@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Новый заказ-наряд — AutoService Pro{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard/">Дашборд</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'orders:list' %}">Заказ-наряды</a></li>
+    <li class="breadcrumb-item active">Новый заказ</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}
+<h4 class="mb-4"><i class="fas fa-plus-circle me-2"></i>Новый заказ-наряд</h4>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <form method="post" novalidate id="create-form">
+      {% csrf_token %}
+
+      <!-- Step indicators -->
+      <div class="d-flex justify-content-center mb-4">
+        <div class="d-flex gap-3">
+          <span class="badge bg-primary rounded-pill px-3 py-2 step-badge" data-step="1">1. Клиент</span>
+          <span class="badge bg-secondary rounded-pill px-3 py-2 step-badge" data-step="2">2. Автомобиль</span>
+          <span class="badge bg-secondary rounded-pill px-3 py-2 step-badge" data-step="3">3. Описание</span>
+        </div>
+      </div>
+
+      <!-- Step 1: Client -->
+      <div class="card mb-3 wizard-step" id="step-1">
+        <div class="card-header"><h6 class="mb-0"><i class="fas fa-user me-2"></i>Шаг 1: Выберите клиента</h6></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="id_client" class="form-label">Клиент <span class="text-danger">*</span></label>
+            <select name="client" id="id_client" class="form-select" required>
+              <option value="">— Выберите клиента —</option>
+              {% for c in form.fields.client.queryset %}
+              <option value="{{ c.pk }}" {% if form.client.value|stringformat:"s" == c.pk|stringformat:"s" %}selected{% endif %}>
+                {{ c.get_full_name }} ({{ c.phone }})
+              </option>
+              {% endfor %}
+            </select>
+            {% for e in form.client.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <a href="{% url 'clients:create' %}" class="btn btn-outline-secondary btn-sm" target="_blank">
+            <i class="fas fa-plus me-1"></i>Новый клиент
+          </a>
+          <div class="mt-3 text-end">
+            <button type="button" class="btn btn-primary btn-next" data-next="2">Далее <i class="fas fa-arrow-right ms-1"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Vehicle -->
+      <div class="card mb-3 wizard-step d-none" id="step-2">
+        <div class="card-header"><h6 class="mb-0"><i class="fas fa-car me-2"></i>Шаг 2: Выберите автомобиль</h6></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="id_vehicle" class="form-label">Автомобиль <span class="text-danger">*</span></label>
+            <select name="vehicle" id="id_vehicle" class="form-select" required>
+              <option value="">— Сначала выберите клиента —</option>
+            </select>
+            {% for e in form.vehicle.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div id="vehicle-add-link" class="d-none">
+            <a href="#" id="add-vehicle-btn" class="btn btn-outline-secondary btn-sm" target="_blank">
+              <i class="fas fa-plus me-1"></i>Добавить авто
+            </a>
+          </div>
+          <div class="mt-3 d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="1"><i class="fas fa-arrow-left me-1"></i> Назад</button>
+            <button type="button" class="btn btn-primary btn-next" data-next="3">Далее <i class="fas fa-arrow-right ms-1"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Description -->
+      <div class="card mb-3 wizard-step d-none" id="step-3">
+        <div class="card-header"><h6 class="mb-0"><i class="fas fa-edit me-2"></i>Шаг 3: Описание проблемы</h6></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="id_description" class="form-label">Описание проблемы <span class="text-danger">*</span></label>
+            <textarea name="description" id="id_description" rows="4" class="form-control"
+                      placeholder="Опишите проблему клиента..." required>{{ form.description.value|default:'' }}</textarea>
+            {% for e in form.description.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="id_assigned_mechanic" class="form-label">Мастер</label>
+              <select name="assigned_mechanic" id="id_assigned_mechanic" class="form-select">
+                <option value="">— Не назначен —</option>
+                {% for m in form.fields.assigned_mechanic.queryset %}
+                <option value="{{ m.pk }}">{{ m.get_full_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="id_estimated_completion" class="form-label">Ожидаемая дата готовности</label>
+              <input type="datetime-local" name="estimated_completion" id="id_estimated_completion"
+                     class="form-control" value="{{ form.estimated_completion.value|default:'' }}">
+            </div>
+          </div>
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for e in form.non_field_errors %}<p class="mb-0">{{ e }}</p>{% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary btn-prev" data-prev="2"><i class="fas fa-arrow-left me-1"></i> Назад</button>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-check me-1"></i>Создать заказ-наряд
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Wizard navigation
+    document.querySelectorAll('.btn-next').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var next = this.dataset.next;
+            document.querySelectorAll('.wizard-step').forEach(function(s) { s.classList.add('d-none'); });
+            document.getElementById('step-' + next).classList.remove('d-none');
+            document.querySelectorAll('.step-badge').forEach(function(b) {
+                b.classList.replace('bg-primary', 'bg-secondary');
+            });
+            document.querySelector('.step-badge[data-step="' + next + '"]').classList.replace('bg-secondary', 'bg-primary');
+        });
+    });
+    document.querySelectorAll('.btn-prev').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var prev = this.dataset.prev;
+            document.querySelectorAll('.wizard-step').forEach(function(s) { s.classList.add('d-none'); });
+            document.getElementById('step-' + prev).classList.remove('d-none');
+            document.querySelectorAll('.step-badge').forEach(function(b) {
+                b.classList.replace('bg-primary', 'bg-secondary');
+            });
+            document.querySelector('.step-badge[data-step="' + prev + '"]').classList.replace('bg-secondary', 'bg-primary');
+        });
+    });
+
+    // AJAX load vehicles on client change
+    var clientSelect = document.getElementById('id_client');
+    var vehicleSelect = document.getElementById('id_vehicle');
+    var vehicleAddLink = document.getElementById('vehicle-add-link');
+    var addVehicleBtn = document.getElementById('add-vehicle-btn');
+
+    clientSelect.addEventListener('change', function() {
+        var clientId = this.value;
+        vehicleSelect.innerHTML = '<option value="">Загрузка...</option>';
+        if (!clientId) {
+            vehicleSelect.innerHTML = '<option value="">— Сначала выберите клиента —</option>';
+            vehicleAddLink.classList.add('d-none');
+            return;
+        }
+        fetch('{% url "orders:client_vehicles" %}?client_id=' + clientId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                vehicleSelect.innerHTML = '<option value="">— Выберите автомобиль —</option>';
+                data.vehicles.forEach(function(v) {
+                    var opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.make + ' ' + v.model + ' (' + v.year + ') ' + v.license_plate;
+                    vehicleSelect.appendChild(opt);
+                });
+                addVehicleBtn.href = '/clients/' + clientId + '/vehicles/add/';
+                vehicleAddLink.classList.remove('d-none');
+            });
+    });
+
+    // Trigger if client already selected (on form errors)
+    if (clientSelect.value) clientSelect.dispatchEvent(new Event('change'));
+});
+</script>
+{% endblock %}

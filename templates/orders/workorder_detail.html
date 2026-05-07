@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ order.order_number }} — AutoService Pro{% endblock %}
+
+{% block extra_css %}
+<!-- Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard/">Дашборд</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'orders:list' %}">Заказ-наряды</a></li>
+    <li class="breadcrumb-item active">{{ order.order_number }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h4 class="mb-1">{{ order.order_number }}</h4>
+    <span class="badge {{ order.get_status_badge_class }} fs-6" id="status-badge">{{ order.get_status_display }}</span>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'orders:edit' order.pk %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-pen me-1"></i>Редактировать</a>
+    <a href="{% url 'orders:print' order.pk %}" class="btn btn-outline-secondary btn-sm" target="_blank"><i class="fas fa-print me-1"></i>Печать</a>
+  </div>
+</div>
+
+<!-- Status transition buttons -->
+<div class="mb-4" id="status-buttons">
+  {% for t in allowed_transitions %}
+  <button class="btn btn-sm btn-outline-primary me-1 btn-status-change"
+          data-status="{{ t }}">
+    {% if t == 'ready' %}
+      <i class="fas fa-bell me-1"></i>Готов к выдаче
+    {% elif t == 'cancelled' %}
+      <i class="fas fa-times me-1"></i>Отменить
+    {% else %}
+      {% for code, label in status_labels.items %}{% if code == t %}{{ label }}{% endif %}{% endfor %}
+    {% endif %}
+  </button>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- AJAX alerts container -->
+<div id="ajax-alerts"></div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info"><i class="fas fa-info-circle me-1"></i>Основное</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-services"><i class="fas fa-wrench me-1"></i>Услуги <span class="badge bg-secondary">{{ items|length }}</span></button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-parts"><i class="fas fa-cogs me-1"></i>Запчасти <span class="badge bg-secondary">{{ parts|length }}</span></button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-cost"><i class="fas fa-calculator me-1"></i>Стоимость</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-history"><i class="fas fa-history me-1"></i>История</button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-qr"><i class="fas fa-qrcode me-1"></i>QR</button></li>
+</ul>
+
+<div class="tab-content mt-3">
+
+  <!-- Tab: Info -->
+  <div class="tab-pane fade show active" id="tab-info">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <table class="table table-borderless mb-0">
+              <tr><th class="text-muted" style="width:150px">Клиент</th>
+                  <td><a href="{% url 'clients:detail' order.client.pk %}">{{ order.client.get_full_name }}</a><br><small class="text-muted">{{ order.client.phone }}</small></td></tr>
+              <tr><th class="text-muted">Автомобиль</th>
+                  <td>{{ order.vehicle.make }} {{ order.vehicle.model }} ({{ order.vehicle.year }})<br><small class="text-muted">{{ order.vehicle.license_plate }}</small></td></tr>
+              <tr><th class="text-muted">Мастер</th><td>{{ order.assigned_mechanic.get_full_name|default:"Не назначен" }}</td></tr>
+              <tr><th class="text-muted">Ожид. готовность</th><td>{{ order.estimated_completion|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <table class="table table-borderless mb-0">
+              <tr><th class="text-muted" style="width:120px">Создан</th><td>{{ order.created_at|date:"d.m.Y H:i" }}</td></tr>
+              <tr><th class="text-muted">Начат</th><td>{{ order.started_at|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+              <tr><th class="text-muted">Завершён</th><td>{{ order.completed_at|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+              <tr><th class="text-muted">Выдан</th><td>{{ order.delivered_at|date:"d.m.Y H:i"|default:"—" }}</td></tr>
+            </table>
+          </div>
+        </div>
+        <hr>
+        <h6 class="text-muted">Описание проблемы</h6>
+        <p>{{ order.description }}</p>
+        {% if order.diagnosis %}
+        <h6 class="text-muted">Диагноз</h6>
+        <p>{{ order.diagnosis }}</p>
+        {% endif %}
+        {% if order.recommendations %}
+        <h6 class="text-muted">Рекомендации</h6>
+        <p>{{ order.recommendations }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Services -->
+  <div class="tab-pane fade" id="tab-services">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-3">
+          <h6 class="mb-0">Услуги</h6>
+          <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+            <i class="fas fa-plus me-1"></i>Добавить услугу
+          </button>
+        </div>
+        <table class="table table-hover mb-0" id="services-table">
+          <thead><tr><th>#</th><th>Наименование</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+          <tbody>
+            {% for item in items %}
+            <tr data-id="{{ item.id }}">
+              <td>{{ forloop.counter }}</td>
+              <td>{{ item.service.name }}</td>
+              <td>{{ item.price|floatformat:0 }} &#8381;</td>
+              <td>{{ item.quantity }}</td>
+              <td class="fw-semibold">{{ item.subtotal|floatformat:0 }} &#8381;</td>
+              <td>
+                <button class="btn btn-sm btn-outline-danger btn-remove-service" data-id="{{ item.id }}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr id="no-services"><td colspan="6" class="text-center text-muted">Услуги не добавлены</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Parts -->
+  <div class="tab-pane fade" id="tab-parts">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between mb-3">
+          <h6 class="mb-0">Запчасти</h6>
+          <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPartModal">
+            <i class="fas fa-plus me-1"></i>Добавить запчасть
+          </button>
+        </div>
+        <table class="table table-hover mb-0" id="parts-table">
+          <thead><tr><th>#</th><th>Наименование</th><th>Цена/ед.</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+          <tbody>
+            {% for p in parts %}
+            <tr data-id="{{ p.id }}">
+              <td>{{ forloop.counter }}</td>
+              <td>{{ p.spare_part.name }}<br><small class="text-muted">{{ p.spare_part.part_number }}</small></td>
+              <td>{{ p.price_per_unit|floatformat:0 }} &#8381;</td>
+              <td>{{ p.quantity }}</td>
+              <td class="fw-semibold">{{ p.subtotal|floatformat:0 }} &#8381;</td>
+              <td>
+                <button class="btn btn-sm btn-outline-danger btn-remove-part" data-id="{{ p.id }}">
+                  <i class="fas fa-times"></i>
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr id="no-parts"><td colspan="6" class="text-center text-muted">Запчасти не добавлены</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Cost -->
+  <div class="tab-pane fade" id="tab-cost">
+    <div class="card">
+      <div class="card-body">
+        <table class="table table-borderless" style="max-width:400px">
+          <tr><td class="text-muted">Услуги:</td><td class="text-end" id="cost-services">{{ order.total_services_cost|floatformat:0 }} &#8381;</td></tr>
+          <tr><td class="text-muted">Запчасти:</td><td class="text-end" id="cost-parts">{{ order.total_parts_cost|floatformat:0 }} &#8381;</td></tr>
+          <tr class="border-top"><td class="text-muted">Итого:</td><td class="text-end fw-semibold" id="cost-total">{{ order.total_cost|floatformat:0 }} &#8381;</td></tr>
+          <tr><td class="text-muted">Скидка:</td><td class="text-end">{{ order.discount_percent }}%</td></tr>
+          <tr class="border-top"><td class="fw-bold fs-5">К оплате:</td><td class="text-end fw-bold fs-5 text-primary" id="cost-final">{{ order.final_cost|floatformat:0 }} &#8381;</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: History -->
+  <div class="tab-pane fade" id="tab-history">
+    <div class="card">
+      <div class="card-body">
+        {% if history %}
+        <div class="timeline">
+          {% for h in history %}
+          <div class="d-flex mb-3">
+            <div class="me-3 text-center" style="min-width:60px">
+              <div class="small text-muted">{{ h.created_at|date:"d.m" }}</div>
+              <div class="small text-muted">{{ h.created_at|time:"H:i" }}</div>
+            </div>
+            <div class="border-start border-2 ps-3">
+              <strong>{{ h.get_from_status_display|default:h.from_status }}</strong>
+              <i class="fas fa-arrow-right mx-1 text-muted"></i>
+              <strong>{{ h.get_to_status_display|default:h.to_status }}</strong>
+              <br>
+              <small class="text-muted">{{ h.changed_by.get_full_name|default:"Система" }}</small>
+              {% if h.comment %}<br><small class="text-muted fst-italic">{{ h.comment }}</small>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted text-center py-3">Изменений статуса ещё не было.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: QR -->
+  <div class="tab-pane fade" id="tab-qr">
+    <div class="card">
+      <div class="card-body text-center">
+        {% if order.qr_code %}
+          <img src="{{ order.qr_code.url }}" alt="QR-код" class="mb-3" style="max-width:200px">
+        {% else %}
+          <div class="text-muted mb-3">
+            <i class="fas fa-qrcode fa-3x mb-2 d-block"></i>
+            QR-код будет сгенерирован автоматически
+          </div>
+        {% endif %}
+        <p class="text-muted small">Ссылка для проверки статуса:<br>
+          <a href="{{ order.get_qr_url }}">{{ order.get_qr_url }}</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Services (multi-select checkboxes) -->
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Добавить услуги</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="text" class="form-control form-control-sm mb-3" id="svc-search" placeholder="Поиск услуги...">
+        <div id="svc-checklist" style="max-height:400px;overflow-y:auto;">
+          <!-- Filled by JS: checkboxes grouped by category -->
+        </div>
+        <div class="mt-2 p-2 bg-light rounded text-end small">
+          Выбрано: <strong id="svc-selected-count">0</strong> | Сумма: <strong id="svc-selected-total">0</strong> &#8381;
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" id="btn-add-service">
+          <i class="fas fa-plus me-1"></i>Добавить выбранные
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Parts (multi-select checkboxes) -->
+<div class="modal fade" id="addPartModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Добавить запчасти</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="text" class="form-control form-control-sm mb-3" id="part-search" placeholder="Поиск запчасти...">
+        <div id="part-checklist" style="max-height:400px;overflow-y:auto;">
+          <!-- Filled by JS -->
+        </div>
+        <div class="mt-2 p-2 bg-light rounded text-end small">
+          Выбрано: <strong id="part-selected-count">0</strong> | Сумма: <strong id="part-selected-total">0</strong> &#8381;
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" id="btn-add-part">
+          <i class="fas fa-plus me-1"></i>Добавить выбранные
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Status change confirmation -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Смена статуса</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p id="status-modal-text"></p>
+        <div class="mb-3">
+          <label class="form-label">Комментарий (необязательно)</label>
+          <textarea class="form-control" id="status-comment" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-status">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
+
+<!-- Page globals for order_detail.js -->
+<script>
+    var ORDER_ID = {{ order.pk }};
+    var CSRF_TOKEN = (function() {
+        var c = document.cookie.split(';').find(function(c) { return c.trim().startsWith('csrftoken='); });
+        return c ? c.split('=')[1] : '';
+    })();
+    var SERVICES_DATA = {{ services_json|safe }};
+    var PARTS_DATA = {{ parts_json|safe }};
+    var STATUS_LABELS = {{ status_labels_json|safe }};
+    console.log('Order detail init: services=' + SERVICES_DATA.length + ', parts=' + PARTS_DATA.length);
+</script>
+<script src="{% static 'orders/js/order_detail.js' %}?v=3"></script>
+{% endblock %}

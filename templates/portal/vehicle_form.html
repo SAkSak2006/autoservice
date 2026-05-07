@@ -1,0 +1,21 @@
+{% extends 'portal/base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Добавить автомобиль — AutoService Pro{% endblock %}
+{% block content %}
+<a href="{% url 'portal:vehicles' %}" class="btn btn-sm btn-outline-secondary mb-3"><i class="fas fa-arrow-left me-1"></i>Назад</a>
+<h5 class="mb-3"><i class="fas fa-car me-2"></i>Добавить автомобиль</h5>
+<div class="card">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ form|crispy }}
+      <button type="submit" class="btn btn-primary mt-2"><i class="fas fa-save me-1"></i>Сохранить</button>
+    </form>
+  </div>
+</div>
+{% if car_makes %}
+<datalist id="car-makes-list">
+  {% for m in car_makes %}{% if m %}<option value="{{ m }}">{% endif %}{% endfor %}
+</datalist>
+{% endif %}
+{% endblock %}

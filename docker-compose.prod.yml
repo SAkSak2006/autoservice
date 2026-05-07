@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=autoservice.settings.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-autoservice_db}
+      POSTGRES_USER: ${POSTGRES_USER:-autoservice}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autoservice}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-autoservice}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  celery_worker:
+    build: .
+    restart: unless-stopped
+    command: celery -A autoservice worker -l info --concurrency=2
+    env_file: .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=autoservice.settings.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - media_data:/app/media
+
+  celery_beat:
+    build: .
+    restart: unless-stopped
+    command: celery -A autoservice beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file: .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=autoservice.settings.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_data:/app/static:ro
+      - media_data:/app/media:ro
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  media_data:
+  static_data:

@@ -1,0 +1,81 @@
+============================================================
+  AUTOSERVICE PRO — КОМАНДЫ ЗАПУСКА СИСТЕМЫ
+  Дата: 14.04.2026
+============================================================
+
+ПРЕДВАРИТЕЛЬНОЕ УСЛОВИЕ: Docker Desktop должен быть запущен
+
+------------------------------------------------------------
+1. ЗАПУСК DOCKER КОНТЕЙНЕРОВ (PostgreSQL + Redis)
+------------------------------------------------------------
+Команда:
+  cd "C:\Users\allak\Desktop\Lerning\dIPLOM ilia\autoservice"
+  docker compose up -d
+
+Что поднимает:
+  - PostgreSQL 16 (порт 5432)  — база данных
+  - Redis 7 (порт 6379)        — брокер задач для Celery
+
+Проверить статус:
+  docker compose ps
+
+------------------------------------------------------------
+2. ПРИМЕНЕНИЕ МИГРАЦИЙ DJANGO
+------------------------------------------------------------
+Команда:
+  cd "C:\Users\allak\Desktop\Lerning\dIPLOM ilia\autoservice"
+  venv\Scripts\python manage.py migrate --settings=autoservice.settings.dev
+
+Выполняется один раз (или после новых миграций).
+
+------------------------------------------------------------
+3. DJANGO WEB СЕРВЕР (Новое окно CMD)
+------------------------------------------------------------
+Команда:
+  cd "C:\Users\allak\Desktop\Lerning\dIPLOM ilia\autoservice"
+  venv\Scripts\python manage.py runserver 0.0.0.0:8000 --settings=autoservice.settings.dev
+
+Или через start (открыть в отдельном окне):
+  start cmd /k "title Django Server && venv\Scripts\python manage.py runserver 0.0.0.0:8000 --settings=autoservice.settings.dev"
+
+Адрес после запуска:  http://127.0.0.1:8000
+
+------------------------------------------------------------
+4. CELERY WORKER — ФОНОВЫЕ ЗАДАЧИ (Новое окно CMD)
+------------------------------------------------------------
+Команда:
+  cd "C:\Users\allak\Desktop\Lerning\dIPLOM ilia\autoservice"
+  venv\Scripts\celery -A autoservice worker --loglevel=info
+
+Или через start:
+  start cmd /k "title Celery Worker && venv\Scripts\celery -A autoservice worker --loglevel=info"
+
+------------------------------------------------------------
+5. TELEGRAM БОТ (Новое окно CMD)
+------------------------------------------------------------
+Команда:
+  cd "C:\Users\allak\Desktop\Lerning\dIPLOM ilia\autoservice"
+  venv\Scripts\python manage.py run_telegram_bot --settings=autoservice.settings.dev
+
+Или через start:
+  start cmd /k "title Telegram Bot && venv\Scripts\python manage.py run_telegram_bot --settings=autoservice.settings.dev"
+
+Токен бота: задан в .env -> TELEGRAM_BOT_TOKEN
+
+------------------------------------------------------------
+ПОРЯДОК ЗАПУСКА (копировать в CMD из папки autoservice):
+------------------------------------------------------------
+
+  docker compose up -d
+  venv\Scripts\python manage.py migrate --settings=autoservice.settings.dev
+  start cmd /k "title Django Server && venv\Scripts\python manage.py runserver 0.0.0.0:8000 --settings=autoservice.settings.dev"
+  start cmd /k "title Celery Worker && venv\Scripts\celery -A autoservice worker --loglevel=info"
+  start cmd /k "title Telegram Bot && venv\Scripts\python manage.py run_telegram_bot --settings=autoservice.settings.dev"
+
+------------------------------------------------------------
+ОСТАНОВКА СИСТЕМЫ:
+------------------------------------------------------------
+  docker compose down         — остановить PostgreSQL и Redis
+  Ctrl+C в каждом окне CMD    — остановить Django, Celery, Bot
+
+============================================================

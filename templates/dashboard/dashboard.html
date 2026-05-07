@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Дашборд — AutoService Pro{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Дашборд</h4>
+  <small class="text-muted">Обновляется автоматически</small>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- SECTION 1: KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 border-start border-primary border-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="text-muted small text-uppercase">Активные заказы</div>
+            <div class="fs-3 fw-bold" id="kpi-active">{{ active_orders_count }}</div>
+          </div>
+          <div class="text-primary opacity-50"><i class="fas fa-clipboard-list fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 border-start border-success border-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="text-muted small text-uppercase">Сегодня</div>
+            <div class="fs-3 fw-bold" id="kpi-today">{{ today_revenue|floatformat:0 }} <small class="fs-6">&#8381;</small></div>
+          </div>
+          <div class="text-success opacity-50"><i class="fas fa-coins fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 border-start border-success border-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="text-muted small text-uppercase">За месяц</div>
+            <div class="fs-3 fw-bold" id="kpi-month">{{ month_revenue|floatformat:0 }} <small class="fs-6">&#8381;</small></div>
+            {% if revenue_change %}
+            <small class="{% if revenue_change > 0 %}text-success{% else %}text-danger{% endif %}">
+              {% if revenue_change > 0 %}&#8593;{% else %}&#8595;{% endif %}{{ revenue_change }}%
+            </small>
+            {% endif %}
+          </div>
+          <div class="text-success opacity-50"><i class="fas fa-chart-line fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 border-start border-warning border-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="text-muted small text-uppercase">Средний чек</div>
+            <div class="fs-3 fw-bold" id="kpi-avg">{{ avg_check|floatformat:0 }} <small class="fs-6">&#8381;</small></div>
+          </div>
+          <div class="text-warning opacity-50"><i class="fas fa-receipt fa-2x"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white"><h6 class="mb-0">Выручка за 7 дней</h6></div>
+      <div class="card-body"><canvas id="chartRevenue" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white"><h6 class="mb-0">Заказы по статусам</h6></div>
+      <div class="card-body d-flex justify-content-center"><canvas id="chartStatus" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white"><h6 class="mb-0">Заказы за 30 дней</h6></div>
+      <div class="card-body"><canvas id="chartTrend" height="220"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-white"><h6 class="mb-0">Загрузка мастеров</h6></div>
+      <div class="card-body"><canvas id="chartMechanics" height="220"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: Tables -->
+<div class="row g-3 mb-4">
+  <!-- Recent Orders -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Последние заказы</h6>
+        <a href="{% url 'orders:list' %}" class="btn btn-sm btn-outline-primary">Все</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover table-sm mb-0">
+          <thead><tr><th>Номер</th><th>Клиент</th><th>Авто</th><th>Статус</th><th>Сумма</th><th>Дата</th></tr></thead>
+          <tbody>
+            {% for o in recent_orders %}
+            <tr>
+              <td><a href="{% url 'orders:detail' o.pk %}" class="text-decoration-none fw-semibold">{{ o.order_number }}</a></td>
+              <td class="small">{{ o.client.get_full_name }}</td>
+              <td class="small text-muted">{{ o.vehicle.make }} {{ o.vehicle.license_plate }}</td>
+              <td><span class="badge {{ o.get_status_badge_class }} small">{{ o.get_status_display }}</span></td>
+              <td class="small">{{ o.final_cost|floatformat:0 }} &#8381;</td>
+              <td class="small text-muted">{{ o.created_at|date:"d.m" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-3">Нет заказов</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Low Stock + Quick Actions -->
+  <div class="col-lg-4">
+    <!-- Low Stock -->
+    <div class="card mb-3">
+      <div class="card-header bg-white"><h6 class="mb-0 text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Мало на складе</h6></div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for p in low_stock_parts %}
+            <tr class="table-danger">
+              <td class="small">{{ p.name }}</td>
+              <td class="small text-center fw-bold">{{ p.quantity_in_stock }}</td>
+              <td class="small text-muted text-center">/ {{ p.min_stock_level }}</td>
+            </tr>
+            {% empty %}
+            <tr><td class="text-center text-muted py-2 small">Всё в норме</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION 4: Quick Actions -->
+    <div class="card mb-3">
+      <div class="card-header bg-white"><h6 class="mb-0">Быстрые действия</h6></div>
+      <div class="card-body d-grid gap-2">
+        <a href="{% url 'orders:create' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Новый заказ-наряд</a>
+        <a href="{% url 'clients:create' %}" class="btn btn-outline-primary btn-sm"><i class="fas fa-user-plus me-1"></i>Новый клиент</a>
+      </div>
+    </div>
+
+    <!-- Today Expected -->
+    {% if today_expected %}
+    <div class="card">
+      <div class="card-header bg-white"><h6 class="mb-0"><i class="fas fa-clock me-1"></i>Сегодня ожидается</h6></div>
+      <ul class="list-group list-group-flush">
+        {% for o in today_expected %}
+        <li class="list-group-item small">
+          <a href="{% url 'orders:detail' o.pk %}">{{ o.order_number }}</a>
+          — {{ o.vehicle.make }} {{ o.vehicle.license_plate }}
+          <span class="badge {{ o.get_status_badge_class }}">{{ o.get_status_display }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+  var revenueData = {{ revenue_chart_data|safe }};
+  var statusData = {{ status_chart_data|safe }};
+  var trendData = {{ trend_chart_data|safe }};
+  var mechanicData = {{ mechanic_chart_data|safe }};
+  var statusLabels = {{ status_labels|safe }};
+
+  var colors = {
+    primary: '#1a73e8', success: '#34a853', warning: '#fbbc04',
+    danger: '#ea4335', info: '#0dcaf0', secondary: '#6c757d', dark: '#212529'
+  };
+  var statusColors = {
+    new: colors.primary, diagnostics: colors.info, approved: colors.secondary,
+    in_progress: colors.warning, waiting_parts: colors.danger,
+    completed: colors.success, ready: colors.success
+  };
+
+  // Chart 1: Revenue Bar
+  new Chart(document.getElementById('chartRevenue'), {
+    type: 'bar',
+    data: {
+      labels: revenueData.map(function(d){return d.date}),
+      datasets: [{
+        label: 'Выручка, \u20bd',
+        data: revenueData.map(function(d){return d.revenue}),
+        backgroundColor: colors.primary + '99',
+        borderColor: colors.primary,
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+
+  // Chart 2: Status Doughnut
+  new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: statusData.map(function(d){return statusLabels[d.status]||d.status}),
+      datasets: [{
+        data: statusData.map(function(d){return d.count}),
+        backgroundColor: statusData.map(function(d){return statusColors[d.status]||colors.secondary}),
+      }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}} }
+  });
+
+  // Chart 3: Trend Line
+  new Chart(document.getElementById('chartTrend'), {
+    type: 'line',
+    data: {
+      labels: trendData.map(function(d){return d.date}),
+      datasets: [{
+        label: 'Заказов',
+        data: trendData.map(function(d){return d.count}),
+        borderColor: colors.primary, backgroundColor: colors.primary+'22',
+        fill: true, tension: 0.3, pointRadius: 1
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}} }
+  });
+
+  // Chart 4: Mechanics Horizontal Bar
+  new Chart(document.getElementById('chartMechanics'), {
+    type: 'bar',
+    data: {
+      labels: mechanicData.map(function(d){return d.first_name+' '+d.last_name}),
+      datasets: [{
+        label: 'Активных заказов',
+        data: mechanicData.map(function(d){return d.active_count}),
+        backgroundColor: colors.warning+'99', borderColor: colors.warning, borderWidth:1, borderRadius:4
+      }]
+    },
+    options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true,ticks:{stepSize:1}}} }
+  });
+
+  // Auto-refresh KPI every 60s
+  setInterval(function() {
+    fetch('{% url "dashboard:kpi_api" %}')
+      .then(function(r){return r.json()})
+      .then(function(d) {
+        document.getElementById('kpi-active').textContent = d.active_orders_count;
+        document.getElementById('kpi-today').innerHTML = Math.round(d.today_revenue).toLocaleString('ru-RU') + ' <small class="fs-6">\u20bd</small>';
+        document.getElementById('kpi-month').innerHTML = Math.round(d.month_revenue).toLocaleString('ru-RU') + ' <small class="fs-6">\u20bd</small>';
+        document.getElementById('kpi-avg').innerHTML = Math.round(d.avg_check).toLocaleString('ru-RU') + ' <small class="fs-6">\u20bd</small>';
+      })
+      .catch(function(){});
+  }, 60000);
+})();
+</script>
+{% endblock %}

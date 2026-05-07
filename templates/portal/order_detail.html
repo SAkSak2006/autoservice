@@ -1,0 +1,83 @@
+{% extends 'portal/base.html' %}
+{% block title %}Заказ {{ order.order_number }} — AutoService Pro{% endblock %}
+{% block content %}
+<a href="{% url 'portal:orders' %}" class="btn btn-sm btn-outline-secondary mb-3"><i class="fas fa-arrow-left me-1"></i>Назад</a>
+
+<h5>Заказ {{ order.order_number }}
+  <span class="badge {{ order.get_status_badge_class }}">{{ order.get_status_display }}</span>
+</h5>
+
+{% if is_cancelled %}
+<div class="alert alert-secondary"><i class="fas fa-times-circle me-1"></i>Заказ отменён</div>
+{% else %}
+<!-- Progress bar -->
+<div class="d-flex justify-content-between my-3 small">
+  {% for s in progress %}
+  <div class="text-center flex-fill">
+    <div class="rounded-circle mx-auto mb-1 d-flex align-items-center justify-content-center"
+         style="width:32px;height:32px;{% if s.state == 'done' %}background:#34a853;color:#fff{% elif s.state == 'current' %}background:#1a73e8;color:#fff;animation:pulse 1.5s infinite{% else %}background:#e2e8f0;color:#94a3b8{% endif %}">
+      {% if s.state == 'done' %}<i class="fas fa-check"></i>{% else %}{{ forloop.counter }}{% endif %}
+    </div>
+    <span class="{% if s.state == 'current' %}text-primary fw-semibold{% else %}text-muted{% endif %}">{{ s.label }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Info -->
+<div class="card mb-3">
+  <div class="card-body">
+    <table class="table table-borderless table-sm mb-0">
+      <tr><td class="text-muted" style="width:140px">Автомобиль</td><td>{{ order.vehicle.make }} {{ order.vehicle.model }} ({{ order.vehicle.year }}) {{ order.vehicle.license_plate }}</td></tr>
+      {% if order.assigned_mechanic %}<tr><td class="text-muted">Мастер</td><td>{{ order.assigned_mechanic.get_full_name }}</td></tr>{% endif %}
+      <tr><td class="text-muted">Создан</td><td>{{ order.created_at|date:"d.m.Y H:i" }}</td></tr>
+      {% if order.estimated_completion %}<tr><td class="text-muted">Готовность</td><td>{{ order.estimated_completion|date:"d.m.Y H:i" }}</td></tr>{% endif %}
+    </table>
+    {% if order.description %}<hr><p class="small mb-0">{{ order.description }}</p>{% endif %}
+  </div>
+</div>
+
+<!-- Services -->
+{% if items %}
+<div class="card mb-3">
+  <div class="card-header py-2"><h6 class="mb-0 small">Выполненные работы</h6></div>
+  <div class="table-responsive"><table class="table table-sm mb-0">
+    <thead><tr><th>Наименование</th><th class="text-end">Сумма</th></tr></thead>
+    <tbody>{% for i in items %}<tr><td>{{ i.service.name }} <span class="text-muted">x{{ i.quantity }}</span></td><td class="text-end">{{ i.subtotal|floatformat:0 }} &#8381;</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<!-- Parts -->
+{% if parts %}
+<div class="card mb-3">
+  <div class="card-header py-2"><h6 class="mb-0 small">Запчасти</h6></div>
+  <div class="table-responsive"><table class="table table-sm mb-0">
+    <thead><tr><th>Наименование</th><th class="text-end">Сумма</th></tr></thead>
+    <tbody>{% for p in parts %}<tr><td>{{ p.spare_part.name }} <span class="text-muted">x{{ p.quantity }}</span></td><td class="text-end">{{ p.subtotal|floatformat:0 }} &#8381;</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<!-- Cost -->
+{% if order.final_cost %}
+<div class="card mb-3">
+  <div class="card-body text-center">
+    <span class="text-muted">К оплате:</span>
+    <span class="fs-4 fw-bold text-primary ms-2">{{ order.final_cost|floatformat:0 }} &#8381;</span>
+    {% if order.discount_percent %}<br><small class="text-muted">Скидка: {{ order.discount_percent }}%</small>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- QR + Actions -->
+<div class="text-center mt-3">
+  {% if order.qr_code %}
+  <img src="{{ order.qr_code.url }}" alt="QR" style="width:120px" class="mb-2"><br>
+  <small class="text-muted">QR-код для проверки статуса</small><br>
+  {% endif %}
+  <div class="mt-3 d-flex justify-content-center gap-2">
+    <a href="tel:+70001234567" class="btn btn-outline-primary btn-sm"><i class="fas fa-phone me-1"></i>Позвонить</a>
+  </div>
+</div>
+{% endblock %}

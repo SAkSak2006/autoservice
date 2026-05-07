@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Клиенты — AutoService Pro{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard/">Дашборд</a></li>
+    <li class="breadcrumb-item active">Клиенты</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0"><i class="fas fa-users me-2"></i>Клиенты</h4>
+  <a href="{% url 'clients:create' %}" class="btn btn-primary">
+    <i class="fas fa-plus me-1"></i>Новый клиент
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="d-flex gap-2 align-items-center">
+      {{ search_form.q }}
+      <button type="submit" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-search"></i>
+      </button>
+      {% if search_form.q.value %}
+        <a href="{% url 'clients:list' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-times"></i>
+        </a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>
+            <a href="?sort={% if current_sort == 'last_name' %}-last_name{% else %}last_name{% endif %}&q={{ search_form.q.value|default:'' }}"
+               class="text-decoration-none text-muted">
+              ФИО
+              {% if current_sort == 'last_name' %}<i class="fas fa-sort-up"></i>
+              {% elif current_sort == '-last_name' %}<i class="fas fa-sort-down"></i>{% endif %}
+            </a>
+          </th>
+          <th>Телефон</th>
+          <th>Email</th>
+          <th>Авто</th>
+          <th>Акт. заказы</th>
+          <th>
+            <a href="?sort={% if current_sort == '-created_at' %}created_at{% else %}-created_at{% endif %}&q={{ search_form.q.value|default:'' }}"
+               class="text-decoration-none text-muted">
+              Создан
+              {% if current_sort == '-created_at' %}<i class="fas fa-sort-down"></i>
+              {% elif current_sort == 'created_at' %}<i class="fas fa-sort-up"></i>{% endif %}
+            </a>
+          </th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr>
+          <td>
+            <a href="{% url 'clients:detail' client.pk %}" class="text-decoration-none fw-semibold">
+              {{ client.get_full_name }}
+            </a>
+            {% if client.user %}
+              <span class="badge bg-info ms-1" title="Есть аккаунт"><i class="fas fa-user-check"></i></span>
+            {% endif %}
+          </td>
+          <td><a href="tel:{{ client.phone }}" class="text-decoration-none">{{ client.phone }}</a></td>
+          <td>{{ client.email|default:"—" }}</td>
+          <td><span class="badge bg-secondary">{{ client.vehicle_count }}</span></td>
+          <td>
+            {% with active=client.get_active_orders.count %}
+              {% if active > 0 %}
+                <span class="badge bg-warning text-dark">{{ active }}</span>
+              {% else %}
+                <span class="text-muted">0</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+          <td class="text-muted small">{{ client.created_at|date:"d.m.Y" }}</td>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'clients:edit' client.pk %}"><i class="fas fa-pen me-2"></i>Редактировать</a></li>
+                <li><a class="dropdown-item" href="{% url 'clients:vehicle_add' client.pk %}"><i class="fas fa-car me-2"></i>Добавить авто</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <form method="post" action="{% url 'clients:delete' client.pk %}"
+                        onsubmit="return confirm('Удалить клиента {{ client.get_full_name }}?')">
+                    {% csrf_token %}
+                    <button class="dropdown-item text-danger"><i class="fas fa-trash me-2"></i>Удалить</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            <i class="fas fa-users fa-2x mb-2 d-block"></i>
+            {% if search_form.q.value %}
+              Ничего не найдено по запросу «{{ search_form.q.value }}»
+            {% else %}
+              Клиентов пока нет
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav class="mt-3">
+  <ul class="pagination justify-content-center mb-0">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_form.q.value|default:'' }}&sort={{ current_sort }}">&laquo;</a>
+      </li>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ num }}&q={{ search_form.q.value|default:'' }}&sort={{ current_sort }}">{{ num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_form.q.value|default:'' }}&sort={{ current_sort }}">&raquo;</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+{% endblock %}

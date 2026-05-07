@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} — AutoService Pro{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard/">Дашборд</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'clients:list' %}">Клиенты</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}
+<h4 class="mb-4"><i class="fas fa-user-edit me-2"></i>{{ title }}</h4>
+{% endblock %}
+
+{% block content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <!-- Client info -->
+  <div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0">Данные клиента</h6></div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="id_last_name" class="form-label">Фамилия <span class="text-danger">*</span></label>
+          <input type="text" name="last_name" id="id_last_name"
+                 class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                 value="{{ form.last_name.value|default:'' }}" required>
+          {% for e in form.last_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label for="id_first_name" class="form-label">Имя <span class="text-danger">*</span></label>
+          <input type="text" name="first_name" id="id_first_name"
+                 class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                 value="{{ form.first_name.value|default:'' }}" required>
+          {% for e in form.first_name.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label for="id_patronymic" class="form-label">Отчество</label>
+          <input type="text" name="patronymic" id="id_patronymic" class="form-control"
+                 value="{{ form.patronymic.value|default:'' }}">
+        </div>
+        <div class="col-md-4">
+          <label for="id_phone" class="form-label">Телефон <span class="text-danger">*</span></label>
+          <input type="tel" name="phone" id="id_phone"
+                 class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                 value="{{ form.phone.value|default:'' }}" placeholder="+7XXXXXXXXXX" required>
+          {% for e in form.phone.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <label for="id_email" class="form-label">Email</label>
+          <input type="email" name="email" id="id_email" class="form-control"
+                 value="{{ form.email.value|default:'' }}">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+          <div class="form-check">
+            <input type="checkbox" name="consent_personal_data" id="id_consent_personal_data"
+                   class="form-check-input"
+                   {% if form.consent_personal_data.value %}checked{% endif %}>
+            <label for="id_consent_personal_data" class="form-check-label">Согласие на обработку ПД</label>
+          </div>
+        </div>
+        <div class="col-12">
+          <label for="id_notes" class="form-label">Заметки</label>
+          <textarea name="notes" id="id_notes" rows="3" class="form-control">{{ form.notes.value|default:'' }}</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline vehicles (only on create) -->
+  {% if vehicle_formset %}
+  <div class="card mb-3">
+    <div class="card-header"><h6 class="mb-0">Автомобиль</h6></div>
+    <div class="card-body">
+      {{ vehicle_formset.management_form }}
+      {% for vf in vehicle_formset %}
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Марка <span class="text-danger">*</span></label>
+          <input type="text" name="{{ vf.make.html_name }}" list="car-makes-list"
+                 class="form-control {% if vf.make.errors %}is-invalid{% endif %}"
+                 value="{{ vf.make.value|default:'' }}" placeholder="Начните вводить...">
+          {% for e in vf.make.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Модель <span class="text-danger">*</span></label>
+          <input type="text" name="{{ vf.model.html_name }}"
+                 class="form-control {% if vf.model.errors %}is-invalid{% endif %}"
+                 value="{{ vf.model.value|default:'' }}">
+          {% for e in vf.model.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Год <span class="text-danger">*</span></label>
+          <input type="number" name="{{ vf.year.html_name }}"
+                 class="form-control {% if vf.year.errors %}is-invalid{% endif %}"
+                 value="{{ vf.year.value|default:'' }}" min="1900" max="2027">
+          {% for e in vf.year.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Госномер <span class="text-danger">*</span></label>
+          <input type="text" name="{{ vf.license_plate.html_name }}"
+                 class="form-control {% if vf.license_plate.errors %}is-invalid{% endif %}"
+                 value="{{ vf.license_plate.value|default:'' }}" placeholder="А123БВ777">
+          {% for e in vf.license_plate.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">VIN</label>
+          <input type="text" name="{{ vf.vin.html_name }}"
+                 class="form-control {% if vf.vin.errors %}is-invalid{% endif %}"
+                 value="{{ vf.vin.value|default:'' }}" maxlength="17">
+          {% for e in vf.vin.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Цвет</label>
+          <input type="text" name="{{ vf.color.html_name }}" class="form-control"
+                 value="{{ vf.color.value|default:'' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Пробег (км)</label>
+          <input type="number" name="{{ vf.mileage.html_name }}" class="form-control"
+                 value="{{ vf.mileage.value|default:'0' }}" min="0">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if vehicle_formset.non_form_errors %}
+  <div class="alert alert-danger">
+    {% for error in vehicle_formset.non_form_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">
+    {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">
+      <i class="fas fa-save me-1"></i>Сохранить
+    </button>
+    <a href="{% url 'clients:list' %}" class="btn btn-outline-secondary">Отмена</a>
+  </div>
+</form>
+
+<!-- Datalist for car makes -->
+{% if car_makes %}
+<datalist id="car-makes-list">
+  {% for m in car_makes %}{% if m %}<option value="{{ m }}">{% endif %}{% endfor %}
+</datalist>
+{% endif %}
+{% endblock %}

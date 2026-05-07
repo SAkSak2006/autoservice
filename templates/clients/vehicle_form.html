@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} — AutoService Pro{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard/">Дашборд</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'clients:list' %}">Клиенты</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'clients:detail' client.pk %}">{{ client.get_full_name }}</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}
+<h4 class="mb-4"><i class="fas fa-car me-2"></i>{{ title }}</h4>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="id_make" class="form-label">Марка <span class="text-danger">*</span></label>
+              <input type="text" name="make" id="id_make" list="car-makes-list"
+                     class="form-control {% if form.make.errors %}is-invalid{% endif %}"
+                     value="{{ form.make.value|default:'' }}" placeholder="Начните вводить марку...">
+              {% for e in form.make.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+              <label for="id_model" class="form-label">Модель <span class="text-danger">*</span></label>
+              <input type="text" name="model" id="id_model"
+                     class="form-control {% if form.model.errors %}is-invalid{% endif %}"
+                     value="{{ form.model.value|default:'' }}">
+              {% for e in form.model.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              <label for="id_year" class="form-label">Год выпуска <span class="text-danger">*</span></label>
+              <input type="number" name="year" id="id_year"
+                     class="form-control {% if form.year.errors %}is-invalid{% endif %}"
+                     value="{{ form.year.value|default:'' }}" min="1900" max="2027">
+              {% for e in form.year.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              <label for="id_license_plate" class="form-label">Госномер <span class="text-danger">*</span></label>
+              <input type="text" name="license_plate" id="id_license_plate"
+                     class="form-control {% if form.license_plate.errors %}is-invalid{% endif %}"
+                     value="{{ form.license_plate.value|default:'' }}" placeholder="А123БВ777">
+              {% for e in form.license_plate.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              <label for="id_vin" class="form-label">VIN-код</label>
+              <input type="text" name="vin" id="id_vin"
+                     class="form-control {% if form.vin.errors %}is-invalid{% endif %}"
+                     value="{{ form.vin.value|default:'' }}" maxlength="17"
+                     placeholder="XXXXXXXXXXXXXXXXX" style="text-transform:uppercase">
+              {% for e in form.vin.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="col-md-4">
+              <label for="id_color" class="form-label">Цвет</label>
+              <input type="text" name="color" id="id_color" class="form-control"
+                     value="{{ form.color.value|default:'' }}">
+            </div>
+            <div class="col-md-4">
+              <label for="id_mileage" class="form-label">Пробег (км)</label>
+              <input type="number" name="mileage" id="id_mileage" class="form-control"
+                     value="{{ form.mileage.value|default:'0' }}" min="0">
+            </div>
+            <div class="col-12">
+              <label for="id_notes" class="form-label">Заметки</label>
+              <textarea name="notes" id="id_notes" rows="2" class="form-control">{{ form.notes.value|default:'' }}</textarea>
+            </div>
+          </div>
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger mt-3">
+            {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-1"></i>Сохранить
+            </button>
+            <a href="{% url 'clients:detail' client.pk %}" class="btn btn-outline-secondary">Отмена</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Datalist -->
+{% if car_makes %}
+<datalist id="car-makes-list">
+  {% for m in car_makes %}{% if m %}<option value="{{ m }}">{% endif %}{% endfor %}
+</datalist>
+{% endif %}
+{% endblock %}

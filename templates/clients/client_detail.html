@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ client.get_full_name }} — AutoService Pro{% endblock %}
+
+{% block breadcrumbs %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/dashboard/">Дашборд</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'clients:list' %}">Клиенты</a></li>
+    <li class="breadcrumb-item active">{{ client.get_full_name }}</li>
+  </ol>
+</nav>
+{% endblock %}
+
+{% block page_title %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0">
+    <i class="fas fa-user me-2"></i>{{ client.get_full_name }}
+    {% if client.user %}
+      <span class="badge bg-info ms-1 fs-6"><i class="fas fa-user-check me-1"></i>Есть аккаунт</span>
+    {% endif %}
+  </h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'clients:vehicle_add' client.pk %}" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-car me-1"></i>Добавить авто
+    </a>
+    <a href="{% url 'clients:edit' client.pk %}" class="btn btn-outline-secondary btn-sm">
+      <i class="fas fa-pen me-1"></i>Редактировать
+    </a>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-3" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info">
+      <i class="fas fa-info-circle me-1"></i>Информация
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-vehicles">
+      <i class="fas fa-car me-1"></i>Автомобили
+      <span class="badge bg-secondary ms-1">{{ vehicles|length }}</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-orders">
+      <i class="fas fa-clipboard-list me-1"></i>История заказов
+      {% if active_orders %}
+        <span class="badge bg-warning text-dark ms-1">{{ active_orders|length }}</span>
+      {% endif %}
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- Info Tab -->
+  <div class="tab-pane fade show active" id="tab-info">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <table class="table table-borderless mb-0">
+              <tr><th class="text-muted" style="width:140px">ФИО</th><td>{{ client.get_full_name }}</td></tr>
+              <tr><th class="text-muted">Телефон</th><td><a href="tel:{{ client.phone }}">{{ client.phone }}</a></td></tr>
+              <tr><th class="text-muted">Email</th><td>{{ client.email|default:"—" }}</td></tr>
+              <tr><th class="text-muted">Telegram</th><td>{{ client.telegram_chat_id|default:"Не привязан" }}</td></tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <table class="table table-borderless mb-0">
+              <tr>
+                <th class="text-muted" style="width:140px">Согласие ПД</th>
+                <td>
+                  {% if client.consent_personal_data %}
+                    <span class="text-success"><i class="fas fa-check-circle me-1"></i>Да</span>
+                    <span class="text-muted small ms-1">({{ client.consent_date|date:"d.m.Y" }})</span>
+                  {% else %}
+                    <span class="text-danger"><i class="fas fa-times-circle me-1"></i>Нет</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr><th class="text-muted">Создан</th><td>{{ client.created_at|date:"d.m.Y H:i" }}</td></tr>
+              <tr><th class="text-muted">Обновлён</th><td>{{ client.updated_at|date:"d.m.Y H:i" }}</td></tr>
+              <tr>
+                <th class="text-muted">Уведомления</th>
+                <td>
+                  {% for ch in client.get_preferred_channels %}
+                    <span class="badge bg-primary me-1">{{ ch }}</span>
+                  {% empty %}
+                    <span class="text-muted">Не настроены</span>
+                  {% endfor %}
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        {% if client.notes %}
+        <hr>
+        <h6 class="text-muted">Заметки</h6>
+        <p>{{ client.notes }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Vehicles Tab -->
+  <div class="tab-pane fade" id="tab-vehicles">
+    {% if vehicles %}
+    <div class="row g-3">
+      {% for v in vehicles %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <h6 class="card-title">
+              <i class="fas fa-car text-primary me-1"></i>
+              {{ v.make }} {{ v.model }}
+            </h6>
+            <p class="text-muted small mb-2">{{ v.year }} | {{ v.license_plate }}</p>
+            <table class="table table-sm table-borderless mb-0 small">
+              {% if v.vin %}<tr><td class="text-muted">VIN</td><td>{{ v.vin }}</td></tr>{% endif %}
+              {% if v.color %}<tr><td class="text-muted">Цвет</td><td>{{ v.color }}</td></tr>{% endif %}
+              <tr><td class="text-muted">Пробег</td><td>{{ v.mileage|floatformat:0 }} км</td></tr>
+            </table>
+          </div>
+          <div class="card-footer bg-transparent d-flex gap-2">
+            <a href="{% url 'clients:vehicle_edit' client.pk v.pk %}" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-pen"></i>
+            </a>
+            <form method="post" action="{% url 'clients:vehicle_delete' client.pk v.pk %}"
+                  onsubmit="return confirm('Удалить автомобиль {{ v }}?')">
+              {% csrf_token %}
+              <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fas fa-car fa-2x mb-2 d-block"></i>
+      <p>У клиента нет автомобилей.</p>
+      <a href="{% url 'clients:vehicle_add' client.pk %}" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Добавить авто
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Orders Tab -->
+  <div class="tab-pane fade" id="tab-orders">
+    {% if all_orders %}
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Номер</th>
+              <th>Автомобиль</th>
+              <th>Статус</th>
+              <th>Сумма</th>
+              <th>Дата</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in all_orders %}
+            <tr>
+              <td>
+                <a href="{% url 'orders:detail' order.pk %}">{{ order.order_number }}</a>
+              </td>
+              <td>{{ order.vehicle }}</td>
+              <td><span class="badge {{ order.get_status_badge_class }}">{{ order.get_status_display }}</span></td>
+              <td>{{ order.final_cost|floatformat:0 }} &#8381;</td>
+              <td class="text-muted small">{{ order.created_at|date:"d.m.Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="fas fa-clipboard-list fa-2x mb-2 d-block"></i>
+      <p>Заказов пока нет.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header mt-3">Навигация</div>
+  <nav class="nav flex-column">
+
+    <a class="nav-link" href="/dashboard/">
+      <i class="fas fa-tachometer-alt"></i>
+      <span>Дашборд</span>
+    </a>
+
+    <a class="nav-link" href="/clients/">
+      <i class="fas fa-users"></i>
+      <span>Клиенты</span>
+    </a>
+
+    <a class="nav-link" href="/orders/">
+      <i class="fas fa-clipboard-list"></i>
+      <span>Заказ-наряды</span>
+    </a>
+
+    <a class="nav-link" href="/services/">
+      <i class="fas fa-wrench"></i>
+      <span>Услуги</span>
+    </a>
+
+    <a class="nav-link" href="/services/parts/">
+      <i class="fas fa-cogs"></i>
+      <span>Запчасти</span>
+    </a>
+
+    {% if user.role == 'admin' %}
+    <div class="sidebar-header mt-3">Администрирование</div>
+
+    <a class="nav-link" href="/notifications/">
+      <i class="fas fa-envelope"></i>
+      <span>Уведомления</span>
+    </a>
+
+    <a class="nav-link" href="/admin/">
+      <i class="fas fa-cog"></i>
+      <span>Настройки</span>
+    </a>
+    {% endif %}
+
+  </nav>
+</aside>
+
+<!-- Overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>

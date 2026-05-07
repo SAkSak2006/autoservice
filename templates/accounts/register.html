@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Регистрация — AutoService Pro{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card mt-4">
+      <div class="card-body p-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-car-wrench fa-2x text-primary mb-2"></i>
+          <h4>Регистрация</h4>
+          <p class="text-muted">Создайте аккаунт клиента</p>
+        </div>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label for="id_last_name" class="form-label">Фамилия <span class="text-danger">*</span></label>
+            <input type="text" name="last_name" id="id_last_name"
+                   class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                   value="{{ form.last_name.value|default:'' }}" required>
+            {% for error in form.last_name.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_first_name" class="form-label">Имя <span class="text-danger">*</span></label>
+            <input type="text" name="first_name" id="id_first_name"
+                   class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                   value="{{ form.first_name.value|default:'' }}" required>
+            {% for error in form.first_name.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_patronymic" class="form-label">Отчество</label>
+            <input type="text" name="patronymic" id="id_patronymic"
+                   class="form-control" value="{{ form.patronymic.value|default:'' }}">
+          </div>
+
+          <div class="mb-3">
+            <label for="id_email" class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" name="email" id="id_email"
+                   class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                   value="{{ form.email.value|default:'' }}" required>
+            {% for error in form.email.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_phone" class="form-label">Телефон <span class="text-danger">*</span></label>
+            <input type="tel" name="phone" id="id_phone"
+                   class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                   value="{{ form.phone.value|default:'' }}" placeholder="+7XXXXXXXXXX" required>
+            {% for error in form.phone.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password1" class="form-label">Пароль <span class="text-danger">*</span></label>
+            <input type="password" name="password1" id="id_password1"
+                   class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+            {% for error in form.password1.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password2" class="form-label">Подтверждение пароля <span class="text-danger">*</span></label>
+            <input type="password" name="password2" id="id_password2"
+                   class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+            {% for error in form.password2.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" name="consent_personal_data" id="id_consent_personal_data"
+                   class="form-check-input {% if form.consent_personal_data.errors %}is-invalid{% endif %}" required>
+            <label for="id_consent_personal_data" class="form-check-label">
+              Я согласен на обработку персональных данных <span class="text-danger">*</span>
+            </label>
+            {% for error in form.consent_personal_data.errors %}
+              <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form.non_field_errors %}
+                <p class="mb-0">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <button type="submit" class="btn btn-primary w-100 mb-3">
+            <i class="fas fa-user-plus me-2"></i>Зарегистрироваться
+          </button>
+        </form>
+
+        <div class="text-center">
+          <span class="text-muted">Уже есть аккаунт?</span>
+          <a href="{% url 'accounts:login' %}">Войти</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

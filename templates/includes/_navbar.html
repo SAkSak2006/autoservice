@@ -1,0 +1,76 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+  <div class="container-fluid px-3">
+    <!-- Sidebar toggle (mobile) -->
+    {% if user.is_authenticated and user.role != 'client' %}
+    <button class="btn btn-link text-dark d-lg-none me-2 p-0" id="sidebarToggle" type="button">
+      <i class="fas fa-bars fa-lg"></i>
+    </button>
+    {% endif %}
+
+    <!-- Brand -->
+    <a class="navbar-brand" href="{% if user.is_authenticated and user.role == 'client' %}/portal/{% else %}/dashboard/{% endif %}">
+      <i class="fas fa-car-wrench me-2"></i>AutoService Pro
+    </a>
+
+    <!-- Mobile toggle -->
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Navbar content -->
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav ms-auto align-items-center gap-1">
+        {% if user.is_authenticated %}
+
+          <!-- Notifications bell -->
+          <li class="nav-item dropdown">
+            <a class="nav-link position-relative" href="#" data-bs-toggle="dropdown">
+              <i class="fas fa-bell fa-lg"></i>
+              <span class="badge bg-danger notification-badge d-none" id="notifCount">0</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" style="width: 320px;">
+              <li><h6 class="dropdown-header">Уведомления</h6></li>
+              <li><hr class="dropdown-divider"></li>
+              <li class="px-3 py-2 text-muted small text-center" id="notifEmpty">Нет новых уведомлений</li>
+            </ul>
+          </li>
+
+          <!-- User dropdown -->
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+              <span class="user-avatar-placeholder">
+                {{ user.first_name|first|default:"U" }}
+              </span>
+              <span class="d-none d-md-inline">{{ user.get_short_name|default:user.username }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                  <i class="fas fa-user me-2"></i>Профиль
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                  <i class="fas fa-sign-out-alt me-2"></i>Выход
+                </a>
+              </li>
+            </ul>
+          </li>
+
+        {% else %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'accounts:login' %}">
+              <i class="fas fa-sign-in-alt me-1"></i>Войти
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-primary btn-sm" href="{% url 'accounts:register' %}">Регистрация</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>

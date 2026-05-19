@@ -18,47 +18,46 @@ class Command(BaseCommand):
         from accounts.models import User
 
         if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser(
+            u = User.objects.create_superuser(
                 username='admin',
                 email='admin@autoservice.ru',
                 password='Admin1234!',
                 first_name='Администратор',
                 last_name='Системы',
             )
+            u.role = 'admin'
+            u.save(update_fields=['role'])
             self.stdout.write('  Создан суперпользователь: admin / Admin1234!')
+        else:
+            User.objects.filter(username='admin').update(role='admin')
 
         if not User.objects.filter(username='mechanic1').exists():
-            User.objects.create_user(
+            u = User.objects.create_user(
                 username='mechanic1',
                 email='mechanic1@autoservice.ru',
                 password='Mech1234!',
                 first_name='Иван',
                 last_name='Петров',
-                role='mechanic',
             )
+            u.role = 'mechanic'
+            u.save(update_fields=['role'])
             self.stdout.write('  Создан механик: mechanic1 / Mech1234!')
+        else:
+            User.objects.filter(username='mechanic1').update(role='mechanic')
 
         if not User.objects.filter(username='mechanic2').exists():
-            User.objects.create_user(
+            u = User.objects.create_user(
                 username='mechanic2',
                 email='mechanic2@autoservice.ru',
                 password='Mech1234!',
                 first_name='Сергей',
                 last_name='Иванов',
-                role='mechanic',
             )
+            u.role = 'mechanic'
+            u.save(update_fields=['role'])
             self.stdout.write('  Создан механик: mechanic2 / Mech1234!')
-
-        if not User.objects.filter(username='manager1').exists():
-            User.objects.create_user(
-                username='manager1',
-                email='manager1@autoservice.ru',
-                password='Mgr1234!',
-                first_name='Ольга',
-                last_name='Смирнова',
-                role='manager',
-            )
-            self.stdout.write('  Создан менеджер: manager1 / Mgr1234!')
+        else:
+            User.objects.filter(username='mechanic2').update(role='mechanic')
 
     def _create_services(self):
         from services.models import ServiceCategory, Service

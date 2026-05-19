@@ -11,6 +11,7 @@ class Command(BaseCommand):
         self._create_services()
         self._create_parts()
         self._create_clients()
+        self._create_notification_templates()
         self._create_orders()
         self.stdout.write(self.style.SUCCESS('База успешно заполнена тестовыми данными!'))
 
@@ -212,6 +213,85 @@ class Command(BaseCommand):
                     defaults={**vd, 'client': client},
                 )
         self.stdout.write(f'  Создано {len(clients_data)} клиентов')
+
+    def _create_notification_templates(self):
+        from notifications.models import NotificationTemplate
+
+        templates = [
+            {
+                'name': 'Telegram: заказ создан',
+                'event_type': 'order_created',
+                'channel': 'telegram',
+                'body_template': (
+                    '🔧 <b>Заказ принят!</b>\n\n'
+                    '📋 Номер: <b>{order_number}</b>\n'
+                    '🚗 Автомобиль: {vehicle_info}\n\n'
+                    'Мы приступим к работе в ближайшее время.\n'
+                    'Вопросы: {workshop_phone}'
+                ),
+            },
+            {
+                'name': 'Telegram: статус изменён',
+                'event_type': 'status_changed',
+                'channel': 'telegram',
+                'body_template': (
+                    '🔔 <b>Статус заказа обновлён</b>\n\n'
+                    '📋 Заказ: <b>{order_number}</b>\n'
+                    '🚗 {vehicle_info}\n'
+                    '📊 Статус: <b>{status}</b>\n\n'
+                    'Вопросы: {workshop_phone}'
+                ),
+            },
+            {
+                'name': 'Telegram: заказ готов',
+                'event_type': 'order_ready',
+                'channel': 'telegram',
+                'body_template': (
+                    '🏁 <b>Ваш автомобиль готов!</b>\n\n'
+                    '📋 Заказ: <b>{order_number}</b>\n'
+                    '🚗 {vehicle_info}\n'
+                    '💰 Итого: <b>{total_cost} ₽</b>\n\n'
+                    'Ждём вас для получения!\n'
+                    'Вопросы: {workshop_phone}'
+                ),
+            },
+            {
+                'name': 'Telegram: заказ выдан',
+                'event_type': 'order_delivered',
+                'channel': 'telegram',
+                'body_template': (
+                    '✅ <b>Спасибо за визит!</b>\n\n'
+                    '📋 Заказ {order_number} закрыт.\n'
+                    '🚗 {vehicle_info}\n\n'
+                    'Будем рады видеть вас снова!\n'
+                    '{workshop_phone}'
+                ),
+            },
+            {
+                'name': 'Telegram: напоминание о ТО',
+                'event_type': 'maintenance_reminder',
+                'channel': 'telegram',
+                'body_template': (
+                    '⚙️ <b>Напоминание о техобслуживании</b>\n\n'
+                    'Здравствуйте, {client_name}!\n\n'
+                    '🚗 {vehicle_info}\n\n'
+                    'Прошло более 6 месяцев с последнего визита.\n'
+                    'Рекомендуем пройти плановое ТО.\n\n'
+                    'Запись: {workshop_phone}'
+                ),
+            },
+        ]
+
+        count = 0
+        for t in templates:
+            _, created = NotificationTemplate.objects.get_or_create(
+                event_type=t['event_type'],
+                channel=t['channel'],
+                defaults={'name': t['name'], 'body_template': t['body_template']},
+            )
+            if created:
+                count += 1
+        self.stdout.write(f'  Создано {count} шаблонов уведомлений')
 
     def _create_orders(self):
         from accounts.models import User

@@ -65,6 +65,19 @@ services:
       redis:
         condition: service_started
 
+  telegram_bot:
+    build: .
+    restart: unless-stopped
+    command: python manage.py run_telegram_bot
+    env_file: .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=autoservice.settings.prod
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped

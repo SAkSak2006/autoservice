@@ -1,0 +1,13 @@
+version: '3.8'
+
+# VPS override: web runs on localhost:8001, nginx container disabled (use VPS Nginx instead)
+# Usage: docker-compose -f docker-compose.prod.yml -f docker-compose.vps.yml up -d
+
+services:
+  web:
+    ports:
+      - "127.0.0.1:8001:8000"
+
+  nginx:
+    profiles:
+      - disabled

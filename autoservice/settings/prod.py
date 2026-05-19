@@ -12,6 +12,7 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 X_FRAME_OPTIONS = 'DENY'
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=['http://localhost'])  # noqa: F405
 
 # Email — SMTP in production
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
